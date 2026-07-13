@@ -31,13 +31,10 @@ st.markdown("""
         font-weight: bold;
         text-align: center;
         color: #FF5722;
-        padding: 10px;
-        animation: pulse 1s infinite;
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-        100% { transform: scale(1); }
+        padding: 12px;
+        border: 2px solid #FF5722;
+        border-radius: 12px;
+        margin: 10px 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -105,37 +102,29 @@ elif st.session_state.page == "game":
     total = len(questions)
 
     st.markdown(f"<h2 style='text-align:center;'>🐰 Câu {st.session_state.current_q + 1} / {total}</h2>", unsafe_allow_html=True)
-    
     st.progress(st.session_state.current_q / total)
     st.caption("🏞️ Tiến độ về hang")
-
     st.metric("🌟 Điểm số", st.session_state.score)
 
     # Câu hỏi
     st.markdown(f"<div class='question-box'><strong>{q['q']}</strong></div>", unsafe_allow_html=True)
 
-    # Timer
+    # === TIMER ===
     time_left = get_time_left()
     st.markdown(f"<div class='timer'>⏰ {time_left} giây</div>", unsafe_allow_html=True)
 
-    # Tự động đếm ngược
-    if not st.session_state.answered:
-        if time_left <= 0:
-            st.session_state.answered = True
-            st.error("⏰ Hết thời gian!")
-            st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
-            time.sleep(2)
-            if st.session_state.current_q < total - 1:
-                next_question()
-            else:
-                st.session_state.page = "result"
-                st.rerun()
+    if not st.session_state.answered and time_left <= 0:
+        st.session_state.answered = True
+        st.error("⏰ Hết thời gian!")
+        st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
+        time.sleep(2)
+        if st.session_state.current_q < total - 1:
+            next_question()
         else:
-            # Đếm ngược mượt từng giây
-            time.sleep(0.3)   # Nhỏ để mượt mà mà không lag
+            st.session_state.page = "result"
             st.rerun()
 
-    # Các đáp án
+    # === CÁC LỰA CHỌN - ĐÃ TÁCH RIÊNG ĐỂ TRÁNH XUNG ĐỘT ===
     st.write("**Chọn đáp án đúng để giúp Usagi vượt chướng ngại vật:**")
     cols = st.columns(2)
     for i, opt in enumerate(q["options"]):
@@ -157,6 +146,11 @@ elif st.session_state.page == "game":
                 else:
                     st.session_state.page = "result"
                     st.rerun()
+
+    # Đếm ngược tự động (chỉ rerun khi chưa trả lời)
+    if not st.session_state.answered:
+        time.sleep(0.8)   # Cân bằng giữa mượt và không lag
+        st.rerun()
 
 # ==================== KẾT QUẢ ====================
 elif st.session_state.page == "result":
@@ -183,4 +177,3 @@ elif st.session_state.page == "result":
     with col2:
         if st.button("📋 Đánh giá Game", type="secondary", use_container_width=True):
             st.markdown("[**Mở Form Đánh Giá**](https://forms.gle/JuZChBEuK8Q43aGj7)", unsafe_allow_html=True)
-            
