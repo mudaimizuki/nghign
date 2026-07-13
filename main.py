@@ -27,15 +27,16 @@ st.markdown("""
         border: 3px solid #00BFFF;
     }
     .timer {
-        font-size: 32px;
+        font-size: 36px;
         font-weight: bold;
         text-align: center;
         color: #FF5722;
+        padding: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Session state
+# Khởi tạo session
 if "page" not in st.session_state:
     st.session_state.page = "name"
 if "name" not in st.session_state:
@@ -44,8 +45,8 @@ if "score" not in st.session_state:
     st.session_state.score = 0
 if "current_q" not in st.session_state:
     st.session_state.current_q = 0
-if "time_left" not in st.session_state:
-    st.session_state.time_left = 20
+if "time_start" not in st.session_state:
+    st.session_state.time_start = None
 if "answered" not in st.session_state:
     st.session_state.answered = False
 
@@ -62,10 +63,19 @@ questions = [
     {"q": "Trong mặt phẳng Oxy, phương trình nào sau đây là phương trình chính tắc của một đường tròn?", "options": ["A. x² + y² = -4", "B. x² + y² = 0", "C. x² - y² = 4", "D. x² + y² = 4"], "answer": 3}
 ]
 
+def reset_timer():
+    st.session_state.time_start = time.time()
+    st.session_state.answered = False
+
+def get_time_left():
+    if st.session_state.time_start is None:
+        return 20
+    elapsed = time.time() - st.session_state.time_start
+    return max(0, 20 - int(elapsed))
+
 def next_question():
     st.session_state.current_q += 1
-    st.session_state.time_left = 20
-    st.session_state.answered = False
+    reset_timer()
     st.rerun()
 
 # ==================== TRANG NHẬP TÊN ====================
@@ -77,6 +87,8 @@ if st.session_state.page == "name":
         if name.strip():
             st.session_state.name = name.strip()
             st.session_state.page = "game"
+            st.session_state.current_q = 0
+            reset_timer()
             st.rerun()
         else:
             st.warning("🐰 Usagi đang chờ tên của bạn!")
@@ -89,8 +101,7 @@ elif st.session_state.page == "game":
     st.markdown(f"<h2 style='text-align:center;'>🐰 Câu {st.session_state.current_q + 1} / {total}</h2>", unsafe_allow_html=True)
     
     # Progress
-    progress = (st.session_state.current_q / total) * 100
-    st.progress(progress)
+    st.progress(st.session_state.current_q / total)
     st.caption("🏞️ Tiến độ về hang")
 
     st.metric("🌟 Điểm số", st.session_state.score)
@@ -99,27 +110,26 @@ elif st.session_state.page == "game":
     st.markdown(f"<div class='question-box'><strong>{q['q']}</strong></div>", unsafe_allow_html=True)
 
     # Timer
-    timer_placeholder = st.empty()
-    if not st.session_state.answered:
-        if st.session_state.time_left > 0:
-            timer_placeholder.markdown(f"<div class='timer'>⏰ {st.session_state.time_left} giây</div>", unsafe_allow_html=True)
-        else:
-            st.session_state.answered = True
-            st.error("⏰ Hết thời gian!")
-            st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
-            time.sleep(2)
-            if st.session_state.current_q < total - 1:
-                next_question()
-            else:
-                st.session_state.page = "result"
-                st.rerun()
+    time_left = get_time_left()
+    st.markdown(f"<div class='timer'>⏰ {time_left} giây</div>", unsafe_allow_html=True)
 
-    # === CÁC ĐÁP ÁN - ĐÃ FIX ===
+    if time_left <= 0 and not st.session_state.answered:
+        st.session_state.answered = True
+        st.error("⏰ Hết thời gian!")
+        st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
+        time.sleep(2)
+        if st.session_state.current_q < total - 1:
+            next_question()
+        else:
+            st.session_state.page = "result"
+            st.rerun()
+
+    # Các đáp án
     st.write("**Chọn đáp án đúng để giúp Usagi vượt chướng ngại vật:**")
     cols = st.columns(2)
     for i, opt in enumerate(q["options"]):
         with cols[i % 2]:
-            if st.button(opt, key=f"btn_{st.session_state.current_q}_{i}", use_container_width=True):
+            if st.button(opt, key=f"btn_q{st.session_state.current_q}_opt{i}", use_container_width=True):
                 st.session_state.answered = True
                 correct = q["answer"]
                 
@@ -136,12 +146,6 @@ elif st.session_state.page == "game":
                 else:
                     st.session_state.page = "result"
                     st.rerun()
-
-    # Giảm thời gian (chạy sau khi render button)
-    if not st.session_state.answered and st.session_state.time_left > 0:
-        time.sleep(1)
-        st.session_state.time_left -= 1
-        st.rerun()
 
 # ==================== KẾT QUẢ ====================
 elif st.session_state.page == "result":
@@ -168,3 +172,4 @@ elif st.session_state.page == "result":
     with col2:
         if st.button("📋 Đánh giá Game", type="secondary", use_container_width=True):
             st.markdown("[**Mở Form Đánh Giá**](https://forms.gle/JuZChBEuK8Q43aGj7)", unsafe_allow_html=True)
+        
