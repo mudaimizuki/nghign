@@ -32,11 +32,17 @@ st.markdown("""
         text-align: center;
         color: #FF5722;
         padding: 10px;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Khởi tạo session
+# Session state
 if "page" not in st.session_state:
     st.session_state.page = "name"
 if "name" not in st.session_state:
@@ -100,7 +106,6 @@ elif st.session_state.page == "game":
 
     st.markdown(f"<h2 style='text-align:center;'>🐰 Câu {st.session_state.current_q + 1} / {total}</h2>", unsafe_allow_html=True)
     
-    # Progress
     st.progress(st.session_state.current_q / total)
     st.caption("🏞️ Tiến độ về hang")
 
@@ -113,15 +118,21 @@ elif st.session_state.page == "game":
     time_left = get_time_left()
     st.markdown(f"<div class='timer'>⏰ {time_left} giây</div>", unsafe_allow_html=True)
 
-    if time_left <= 0 and not st.session_state.answered:
-        st.session_state.answered = True
-        st.error("⏰ Hết thời gian!")
-        st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
-        time.sleep(2)
-        if st.session_state.current_q < total - 1:
-            next_question()
+    # Tự động đếm ngược
+    if not st.session_state.answered:
+        if time_left <= 0:
+            st.session_state.answered = True
+            st.error("⏰ Hết thời gian!")
+            st.info(f"**Đáp án đúng:** {q['options'][q['answer']]}")
+            time.sleep(2)
+            if st.session_state.current_q < total - 1:
+                next_question()
+            else:
+                st.session_state.page = "result"
+                st.rerun()
         else:
-            st.session_state.page = "result"
+            # Đếm ngược mượt từng giây
+            time.sleep(0.3)   # Nhỏ để mượt mà mà không lag
             st.rerun()
 
     # Các đáp án
@@ -172,4 +183,4 @@ elif st.session_state.page == "result":
     with col2:
         if st.button("📋 Đánh giá Game", type="secondary", use_container_width=True):
             st.markdown("[**Mở Form Đánh Giá**](https://forms.gle/JuZChBEuK8Q43aGj7)", unsafe_allow_html=True)
-        
+            
