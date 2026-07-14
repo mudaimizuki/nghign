@@ -94,6 +94,26 @@ st.markdown("""
     .feedback-wrong {
         color: #ff3333; text-align: center; font-size: 30px; font-weight: bold; text-shadow: 0 0 20px #ff0000; margin-top: 15px;
     }
+    .form-link {
+        display: block;
+        text-align: center;
+        margin-top: 15px;
+        padding: 15px;
+        background: linear-gradient(to bottom, #3b2b13, #1f1406);
+        border: 2px solid #d4af37;
+        border-radius: 8px;
+        color: #ffea00;
+        font-size: 18px;
+        font-weight: bold;
+        text-decoration: none;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+        transition: all 0.3s;
+    }
+    .form-link:hover {
+        background: linear-gradient(to bottom, #5c421b, #2b1c09);
+        color: #ffffff;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -189,7 +209,6 @@ elif st.session_state.page == "game":
     with col_hud1:
         st.markdown(f"<div style='font-size:20px; color:#d4af37;'>👤 {st.session_state.name}</div>", unsafe_allow_html=True)
     with col_hud2:
-        # Fix lỗi st.progress không hỗ trợ tham số text ở bản Streamlit cũ
         st.markdown(f"<div style='text-align:center; color:#a5d6a7; margin-bottom:5px;'>📍 Tiến trình: Ải {q_idx + 1}/10</div>", unsafe_allow_html=True)
         st.progress((q_idx) / 10)
     with col_hud3:
@@ -264,9 +283,13 @@ elif st.session_state.page == "result":
         """, unsafe_allow_html=True)
         
     st.write("---")
+    
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
+        # Nút Chơi Lại
         if st.button("🔄 CHƠI LẠI TỪ ĐẦU", use_container_width=True):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             safe_rerun()
+            
+        # Nút Link Google Form (
