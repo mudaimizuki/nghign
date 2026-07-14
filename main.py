@@ -292,4 +292,5 @@ elif st.session_state.page == "result":
                 del st.session_state[key]
             safe_rerun()
             
-        # Nút Link Google Form (
+        # Nút Link Google Form (https://forms.gle/JuZChBEuK8Q43aGj7)
+
